@@ -3,7 +3,7 @@ from openai import OpenAI
 import pandas as pd
 import os
 
-# Configuración del título
+# Título de la aplicación
 st.title("🤖 Analizador de Juegos Olímpicos con GPT")
 
 # Sidebar para ingresar clave
@@ -22,15 +22,29 @@ if not st.session_state.api_key:
     st.warning("🔑 Por favor, ingresa tu clave API en la barra lateral.")
     st.stop()
 
-# Entrada de texto para la pregunta
+# Entrada de texto
 pregunta = st.text_area("✍️ Escribe tu pregunta sobre los Juegos Olímpicos:")
 
-# Cargar dataset y extraer 200 registros aleatorios
-dataset_path = 'athlete_events_reduced_rows.csv'
+# Cargar el dataset
+dataset_path = '/athlete_events_reduced_rows.csv'
 try:
     df = pd.read_csv(dataset_path)
-    df_sample = df.sample(n=200, random_state=42)
-    df_context = df_sample.to_string(index=False)
+
+    # Mostrar el dataset completo como tabla
+    st.markdown("### 📊 Vista previa del dataset:")
+    st.dataframe(df)
+
+    # Crear un contexto resumido del dataset para el modelo
+    columnas = ", ".join(df.columns)
+    resumen = df.describe(include='all').transpose().fillna("").to_string()
+
+    df_context = f"""Este dataset contiene información sobre atletas olímpicos con las siguientes columnas:
+{columnas}
+
+Resumen estadístico y de valores únicos por columna:
+{resumen}
+"""
+
 except Exception as e:
     st.error(f"❌ Error al cargar el dataset: {e}")
     df_context = ""
@@ -41,17 +55,15 @@ if st.button("📤 Enviar pregunta al modelo"):
         st.warning("⚠️ Escribe una pregunta antes de enviarla.")
     else:
         with st.spinner("Consultando al modelo..."):
-
             try:
                 client = OpenAI(api_key=st.session_state.api_key)
 
                 system_prompt = (
                     "Actúa como un historiador experto en los Juegos Olímpicos. "
                     "Responde de forma clara y precisa cualquier pregunta relacionada con los países, atletas, deportes o estadísticas de los Juegos Olímpicos. "
-                    "Si una pregunta no está relacionada con los Juegos Olímpicos, puedes indicar que no es relevante. "
-                    "Si la pregunta no trata sobre los Juegos Olímpicos (como FIFA, Copa del Mundo, otros deportes no olímpicos, etc.), responde únicamente con el mensaje: "
-                    "'❌ Lo siento, esta pregunta no está relacionada con los Juegos Olímpicos.'"
-                    "Aquí tienes una muestra de datos reales de eventos olímpicos:\n\n" + df_context
+                    "Si una pregunta no está relacionada con los Juegos Olímpicos, responde solamente con: "
+                    "'❌ Lo siento, esta pregunta no está relacionada con los Juegos Olímpicos.'\n\n"
+                    f"{df_context}"
                 )
 
                 response = client.chat.completions.create(
