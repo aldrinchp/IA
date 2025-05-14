@@ -26,7 +26,7 @@ if not st.session_state.api_key:
 pregunta = st.text_area("✍️ Escribe tu pregunta sobre los Juegos Olímpicos:")
 
 # Cargar el dataset
-dataset_path = '/athlete_events_reduced_rows.csv'
+dataset_path = 'athlete_events_reduced_rows.csv'
 try:
     df = pd.read_csv(dataset_path)
 
